@@ -1,0 +1,149 @@
+---
+title: 'Problem Set #1'
+author: "Erica Criollo"
+date: "2025-01-29"
+output: pdf_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = TRUE,
+  fig.align = 'center',
+  message = FALSE,
+  warning = FALSE
+)
+
+# Loading packages and importing data
+
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(haven)
+library(dplyr)
+library(tableone)
+
+
+df <- read_sav("UGA_R9.data_.final_.wtd_release.19Jun22_Updated.7Nov23 (1).sav")
+#View(df)
+
+```
+
+
+## Introduction
+In the analysis, this report will be utilizing data from the Round 9 of the Afrobarometer survey in Uganda. This survey was conducted on June 19, 2022 and had 2400 respondents. 
+
+
+```{r}
+# Creating a new data frame with variables including urban/rural, Ages, Gender, Language, Questions on China, Questions on US
+
+PSData <- subset(df, select=c(RESPNO, URBRUR, Q1, Q100, Q2, Q78A, Q78B))
+
+```
+
+
+## Descriptive Statistics
+From the survey, 50% were men and 50% were women. Of all respondents, 43% ranged from 18-30 years old, 38% ranged from 30-50 years old, 16% ranged from 50-70 years old, and 3% were older than 70 years old. The majority of respondents lived in rural areas at 73% while the rest, 27%, lived in urban areas. When analyzing language, the three most popular languages spoken among respondants are Luganda (25%), Lusoga (12%), and Runyankore (10%). 
+
+
+```{r}
+#Exploring new data frame and summarizing statistics
+
+#str(PSData)
+#summary(PSData)
+
+#Finding Percent of Gender (1=Man 2 =Woman )
+Gender <- table(PSData$Q100)
+Gender <-prop.table(Gender)*100
+#View (Gender)
+
+#Change Age from numerical to categorical
+
+summary(PSData$Q1)
+PSData$Q1 <- cut(PSData$Q1,
+                 breaks = c(18, 30, 50, 70, 85),
+                 labels = c("18-30", "30-50", "50-70", "More than 70"))
+
+#Finding Percent of Ages
+
+Age <- table(PSData$Q1)
+Age <-prop.table(Age)*100
+#View (Age)
+
+# Finding Percent of Urban/Rural (1=Urban 2=Rural)
+
+Urbrul <- table(PSData$URBRUR)
+Urbrul <-prop.table(Urbrul)*100
+#View (Urbrul)
+
+
+dstab <- table(PSData$Q2)
+dstabp <-prop.table(dstab)*100
+#View (dstabp)
+
+#Finding Percent of Language
+
+Language <- table(PSData$Q2)
+Language <-prop.table(Language)*100
+#View (Language)
+
+
+#table()
+#the glue: using tibble
+#use kable to give it a nice format after table is created
+#dont use region variable 
+
+```
+
+
+## Attitudes
+
+### Economic and Political Influence of China
+
+Utilizing variable Q78A which measures participants response to the question: "Do you think that the economic and political influence of [China] on Uganda is mostly positive, mostly negative, or haven’t you heard enough to say?". 
+
+```{r tab 1}
+
+#Exploring Q78A Variable
+
+str(PSData$Q78A)
+summary(PSData$Q78A)
+
+
+#Creating table of relative frequency
+
+AttChina <- table(PSData$Q78A)/length(PSData$Q78A)*100
+str(AttChina)
+AttChina <- as.data.frame(AttChina) 
+#View(AttChina)
+
+
+#Changing Labels and Aesthetics
+
+colnames(AttChina) <- c("Attitudes", "Percent")
+AttChina <- AttChina %>%
+  mutate(Attitudes = case_when(
+    Attitudes == 1 ~ "Very Negative",
+    Attitudes == 2 ~ "Somewhat Negative",
+    Attitudes == 3 ~ "Neither Positive Nor Negative",
+    Attitudes == 4 ~ "Somewhat Positive",
+    Attitudes == 5 ~ "Very Positive",
+    Attitudes == 8 ~ "Refused to Answer",
+    Attitudes == 9 ~ "Don't know",
+    TRUE ~ as.character(Attitudes)
+  ))
+
+
+AttChina %>%
+  kable(
+    caption = '\\textbf{Attitudes of Economic and Political Influence of China (%)}',
+    digits = 1L,
+    format = 'latex',
+    booktabs = TRUE
+    
+  )
+
+```
+
+
+## Economic and Political Influence of the United States of America
