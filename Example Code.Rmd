@@ -1,0 +1,255 @@
+---
+title: 'Problem Set #1'
+author: "Erica Criollo"
+date: "2025-01-29"
+output: pdf_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = TRUE,
+  fig.align = 'center',
+  message = FALSE,
+  warning = FALSE
+)
+
+# Loading packages and importing data
+
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(haven)
+library(dplyr)
+library(tableone)
+
+
+df <- read_sav("UGA_R9.data_.final_.wtd_release.19Jun22_Updated.7Nov23 (1).sav")
+#View(df)
+
+```
+
+
+## Introduction
+This report will be utilizing data from the Round 9 of the Afrobarometer survey in Uganda. This survey was conducted on June 19, 2022 and had 2400 respondents. 
+
+
+```{r}
+# Creating a new data frame with variables including urban/rural, Ages, 
+#Gender, Language, Questions on China, Questions on US
+
+PSData <- subset(df, select=c(RESPNO, URBRUR, Q1, Q100, Q2, Q78A, Q78B))
+
+```
+
+
+## Descriptive Statistics
+From the survey, 50% were men and 50% were women. Of all respondents, 43% ranged from 18-30 years old, 38% ranged from 30-50 years old, 16% ranged from 50-70 years old, and 3% were older than 70 years old. The majority of respondents lived in rural areas at 73% while the rest, 27%, lived in urban areas. When analyzing language, the three most popular languages spoken among respondents are Luganda (25%), Lusoga (12%), and Runyankore (10%). 
+
+
+
+```{r}
+#Exploring new data frame and summarizing statistics
+
+#str(PSData)
+#summary(PSData)
+
+#Finding Percent of Gender (1=Man 2 =Woman )
+Gender <- table(PSData$Q100)
+Gender <-prop.table(Gender)*100
+#View (Gender)
+
+#Change Age from numerical to categorical
+
+#summary(PSData$Q1)
+PSData$Q1 <- cut(PSData$Q1,
+                 breaks = c(18, 30, 50, 70, 85),
+                 labels = c("18-30", "30-50", "50-70", "More than 70"))
+
+#Finding Percent of Ages
+
+Age <- table(PSData$Q1)
+Age <-prop.table(Age)*100
+#View (Age)
+
+# Finding Percent of Urban/Rural (1=Urban 2=Rural)
+
+Urbrul <- table(PSData$URBRUR)
+Urbrul <-prop.table(Urbrul)*100
+#View (Urbrul)
+
+#Finding Percent of Language
+
+Language <- table(PSData$Q2)
+Language <-prop.table(Language)*100
+#View (Language)
+
+
+```
+
+
+
+
+## Attitudes
+
+
+This report uses the variables Q78A and Q78B which measures participants response to the question: "Do you think that the economic and political influence of [China or the U.S] on Uganda is mostly positive, mostly negative, or haven’t you heard enough to say?", to find differences in opinion. 
+
+
+### Economic and Political Influence of China
+
+
+Most of the participants view on China’s political and economic influence on Uganda is positive, with 46.8% expressing favorable opinions along Somewhat Positive (27%) and Very Positive (19.8%). Yet, 25.5% of respondents responded as being uncertain and negative perceptions are an overall 23.7%, with Somewhat Negative (12%) and Very Negative (11.7%) responses.
+
+
+```{r tab 1}
+
+
+#Exploring Q78A Variable
+
+#str(PSData$Q78A)
+#summary(PSData$Q78A)
+
+
+#Creating table of relative frequency
+
+AttChina <- table(PSData$Q78A)/length(PSData$Q78A)*100
+#str(AttChina)
+AttChina <- as.data.frame(AttChina) 
+#View(AttChina)
+#summary(AttChina)
+
+
+#Changing Labels and Aesthetics
+
+colnames(AttChina) <- c("Attitudes", "Percent")
+AttChina <- AttChina %>%
+  mutate(Attitudes = case_when(
+    Attitudes == 1 ~ "Very Negative",
+    Attitudes == 2 ~ "Somewhat Negative",
+    Attitudes == 3 ~ "Neither Positive Nor Negative",
+    Attitudes == 4 ~ "Somewhat Positive",
+    Attitudes == 5 ~ "Very Positive",
+    Attitudes == 8 ~ "Refused to Answer",
+    Attitudes == 9 ~ "Don't know",
+    TRUE ~ as.character(Attitudes)
+  ))
+
+
+AttChina %>%
+  knitr::kable(
+    caption = "Attitudes of Economic and Political Influence of China",
+     digits = 1L,
+     format = 'latex',
+     booktabs = TRUE,
+  ) %>%
+  kable_styling(
+    full_width = FALSE
+  )
+
+
+```
+
+
+
+### Economic and Political Influence of the United States of America
+
+
+Most of the participants view on the United State’s political and economic influence on Uganda is uncertain with 34% of all respondents answering "don't know". For positive attitudes, Somewhat Positive (27.8%) and Very Positive (17.1%) make 44.9% of total positive feelings. Negative perceptions are an overall 14.8%, with Somewhat Negative (9.7%) and Very Negative (5.1%) responses.
+
+
+
+```{r tab2}
+
+#Exploring Q78B Variable
+
+#str(PSData$Q78B)
+#summary(PSData$Q78B)
+
+
+#Creating table of relative frequency
+
+AttUSA <- table(PSData$Q78B)/length(PSData$Q78B)*100
+#str(AttUSA)
+AttUSA <- as.data.frame(AttUSA) 
+#View(AttUSA)
+#summary(AttUSA)
+
+
+#Changing Labels and Aesthetics
+
+colnames(AttUSA) <- c("Attitudes", "Percent")
+AttUSA <- AttUSA %>%
+  mutate(Attitudes = case_when(
+    Attitudes == 1 ~ "Very Negative",
+    Attitudes == 2 ~ "Somewhat Negative",
+    Attitudes == 3 ~ "Neither Positive Nor Negative",
+    Attitudes == 4 ~ "Somewhat Positive",
+    Attitudes == 5 ~ "Very Positive",
+    Attitudes == 8 ~ "Refused to Answer",
+    Attitudes == 9 ~ "Don't know",
+    TRUE ~ as.character(Attitudes)
+  ))
+
+
+AttUSA %>%
+  knitr::kable(
+    caption = "Attitudes of Economic and Political Influence of the United States of America",
+     digits = 1L,
+     format = 'latex',
+     booktabs = TRUE,
+  ) %>%
+  kable_styling(
+    full_width = FALSE
+  )
+
+
+```
+
+
+### T-Test
+
+
+In order to find the difference of means between attitudes toward influence of China and the United States on Uganda, a t-test was calculated. Assuming 5% significance for a two-tailed t-test, the analysis rejects the null that there is no difference between attitudes being that the p-value (1.661e-07) is less than 0.05. With t = -5.258, the analysis concludes that there is a statistically significant difference between attitudes. The mean difference (-0.2029) indicates that on average, respondents felt more negative about China's influence than U.S influence on Uganda.
+
+
+```{r tab3}
+
+PSData = 
+  PSData %>%
+  mutate(
+    across(
+      Q78A:Q78B,
+      ~ if_else(.x %in% 1:5, .x, NA)
+    )
+  )
+
+
+# T test
+
+test_result <- t.test(PSData$Q78A, PSData$Q78B, paired = TRUE)
+
+# Creating a table
+
+test_summary <- data.frame(
+  Metric = c("t-Statistic", "Degrees of Freedom", "p-Value", 
+             "Confidence Interval Lower", "Confidence Interval Upper", 
+             "Mean Difference"),
+  Value = c(
+    round(test_result$statistic, 3),
+    test_result$parameter,
+    format.pval(test_result$p.value, digits = 3),
+    round(test_result$conf.int[1], 3),
+    round(test_result$conf.int[2], 3),
+    round(test_result$estimate, 3)
+  )
+)
+
+# Making it Aesthetic
+
+knitr::kable(test_summary, caption = "Paired T-Test Results", align = 'l', col.names = c("Metric", "Value"))
+```
+
+
+
+
